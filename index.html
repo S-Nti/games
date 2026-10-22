@@ -145,6 +145,7 @@ const backHome = document.getElementById('backHome');
 
 const validUser = "杨发勇";
 const validPwd = "蠢蛋";
+let timer = null;
 
 loginBtn.onclick = function(){
     const u = userInput.value.trim();
@@ -158,11 +159,13 @@ loginBtn.onclick = function(){
     }
 }
 backHome.onclick = ()=>{
+    clearInterval(timer);
     gameView.style.display = 'none';
     homeBox.style.display = 'block';
 }
 document.querySelectorAll('.game-btn').forEach(btn=>{
     btn.onclick = ()=>{
+        clearInterval(timer);
         homeBox.style.display = 'none';
         gameView.style.display = 'block';
         runGame(btn.dataset.game);
@@ -170,43 +173,328 @@ document.querySelectorAll('.game-btn').forEach(btn=>{
 })
 
 // 贪吃蛇
-function runGame(name){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    if(name === "snake"){
-        canvas.width=400;canvas.height=400;
-        let sz=20, snake=[{x:5,y:5}], dx=1, dy=0, food={x:10,y:10};
-        function draw(){
-            ctx.fillStyle="#000";ctx.fillRect(0,0,400,400);
-            ctx.fillStyle="#0f0";
-            snake.forEach(s=>ctx.fillRect(s.x*sz,s.y*sz,sz-2,sz-2));
-            ctx.fillStyle="#f00";
-            ctx.fillRect(food.x*sz,food.y*sz,sz-2,sz-2);
+function snakeGame(){
+    canvas.width=400;canvas.height=400;
+    const sz=20;
+    let snake=[{x:5,y:5}], dx=1, dy=0;
+    let food={x:Math.floor(Math.random()*20),y:Math.floor(Math.random()*20)};
+    function draw(){
+        ctx.fillStyle="#000";ctx.fillRect(0,0,400,400);
+        ctx.fillStyle="#0f0";
+        snake.forEach(s=>ctx.fillRect(s.x*sz,s.y*sz,sz-2,sz-2));
+        ctx.fillStyle="#f00";
+        ctx.fillRect(food.x*sz,food.y*sz,sz-2,sz-2);
+    }
+    function step(){
+        let h=snake[0];
+        let nh={x:h.x+dx,y:h.y+dy};
+        if(nh.x<0||nh.y<0||nh.x>=20||nh.y>=20){
+            clearInterval(timer);
+            alert("游戏结束！撞墙");
+            return;
         }
-        function step(){
-            let h=snake[0];
-            let nh={x:h.x+dx,y:h.y+dy};
-            if(nh.x<0||nh.y<0||nh.x*sz>=400||nh.y*sz>=400) return alert("游戏结束");
-            for(let s of snake) if(s.x===nh.x&&s.y===nh.y) return alert("游戏结束");
-            snake.unshift(nh);
-            if(nh.x===food.x&&nh.y===food.y){
-                food={x:Math.floor(Math.random()*20),y:Math.floor(Math.random()*20)};
-            }else snake.pop();
-            draw();
+        for(let s of snake) if(s.x===nh.x&&s.y===nh.y){
+            clearInterval(timer);
+            alert("游戏结束！撞到自己");
+            return;
+        }
+        snake.unshift(nh);
+        if(nh.x===food.x&&nh.y===food.y){
+            food={x:Math.floor(Math.random()*20),y:Math.floor(Math.random()*20)};
+        }else snake.pop();
+        draw();
+    }
+    draw();
+    timer = setInterval(step,150);
+    document.onkeydown=e=>{
+        if(e.key==="ArrowUp"&&dy!==1){dx=0;dy=-1}
+        if(e.key==="ArrowDown"&&dy!==-1){dx=0;dy=1}
+        if(e.key==="ArrowLeft"&&dx!==1){dx=-1;dy=0}
+        if(e.key==="ArrowRight"&&dx!==-1){dx=1;dy=0}
+    }
+}
+
+// 俄罗斯方块
+function tetrisGame(){
+    canvas.width=240;canvas.height=400;
+    const w=12,h=20,bs=20;
+    const shapes=[
+        [[0,0],[1,0],[2,0],[3,0]],
+        [[0,0],[0,1],[1,0],[1,1]],
+        [[0,0],[0,1],[1,1],[1,2]],
+        [[1,0],[1,1],[0,1],[0,2]],
+        [[0,0],[1,0],[1,1],[2,1]],
+        [[1,0],[0,1],[1,1],[2,1]],
+        [[0,0],[1,0],[1,1],[0,2]]
+    ];
+    let grid=Array.from({length:h},()=>Array(w).fill(0));
+    let cur=shapes[Math.floor(Math.random()*shapes.length)];
+    let cx=4,cy=0;
+    function collide(s,x,y){
+        for(let [px,py] of s){
+            let nx=x+px, ny=y+py;
+            if(nx<0||nx>=w||ny>=h) return true;
+            if(ny>=0 && grid[ny][nx]) return true;
+        }
+        return false;
+    }
+    function draw(){
+        ctx.fillStyle="#000";ctx.fillRect(0,0,240,400);
+        for(let y=0;y<h;y++){
+            for(let x=0;x<w;x++){
+                if(grid[y][x]){
+                    ctx.fillStyle="#4285f4";
+                    ctx.fillRect(x*bs,y*bs,bs-1,bs-1);
+                }
+            }
+        }
+        ctx.fillStyle="#34a853";
+        for(let [px,py] of cur){
+            let nx=cx+px, ny=cy+py;
+            if(ny>=0) ctx.fillRect(nx*bs,ny*bs,bs-1,bs-1);
+        }
+    }
+    function drop(){
+        if(!collide(cur,cx,cy+1)) cy++;
+        else{
+            for(let [px,py] of cur){
+                let nx=cx+px, ny=cy+py;
+                if(ny>=0) grid[ny][nx]=1;
+            }
+            for(let y=h-1;y>=0;y--){
+                if(grid[y].every(v=>v!==0)){
+                    grid.splice(y,1);
+                    grid.unshift(Array(w).fill(0));
+                }
+            }
+            cur=shapes[Math.floor(Math.random()*shapes.length)];
+            cx=4;cy=0;
+            if(collide(cur,cx,cy)){
+                clearInterval(timer);
+                alert("游戏结束");
+            }
         }
         draw();
-        setInterval(step,150);
-        document.onkeydown=e=>{
-            if(e.key==="ArrowUp"&&dy!==1){dx=0;dy=-1}
-            if(e.key==="ArrowDown"&&dy!==-1){dx=0;dy=1}
-            if(e.key==="ArrowLeft"&&dx!==1){dx=-1;dy=0}
-            if(e.key==="ArrowRight"&&dx!==-1){dx=1;dy=0}
+    }
+    draw();
+    timer=setInterval(drop,400);
+    document.onkeydown=e=>{
+        if(e.key==="ArrowLeft"&&!collide(cur,cx-1,cy)) cx--;
+        if(e.key==="ArrowRight"&&!collide(cur,cx+1,cy)) cx++;
+        if(e.key==="ArrowDown") drop();
+        if(e.key==="ArrowUp"){
+            let rot=cur.map(([x,y])=>[-y,x]);
+            if(!collide(rot,cx,cy)) cur=rot;
         }
-    }else{
-        canvas.width=400;canvas.height=400;
-        ctx.fillStyle="#fff";
-        ctx.font="20px sans-serif";
-        ctx.textAlign="center";
-        ctx.fillText(`${name} 游戏待开发`,200,200);
+        draw();
+    }
+}
+
+// 五子棋
+function gobangGame(){
+    canvas.width=480;canvas.height=480;
+    const sz=30, n=15;
+    let board=Array.from({length:n},()=>Array(n).fill(0));
+    let turn=1;
+    ctx.fillStyle="#ddb887"; ctx.fillRect(0,0,480,480);
+    for(let i=0;i<n;i++){
+        ctx.beginPath(); ctx.moveTo(sz/2+i*sz,sz/2); ctx.lineTo(sz/2+i*sz,sz/2+(n-1)*sz); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(sz/2,sz/2+i*sz); ctx.lineTo(sz/2+(n-1)*sz,sz/2+i*sz); ctx.stroke();
+    }
+    canvas.onclick=e=>{
+        const rect=canvas.getBoundingClientRect();
+        let mx=e.clientX-rect.left, my=e.clientY-rect.top;
+        let x=Math.round((mx-sz/2)/sz);
+        let y=Math.round((my-sz/2)/sz);
+        if(x<0||x>=n||y<0||y>=n||board[y][x]) return;
+        board[y][x]=turn;
+        ctx.beginPath();
+        ctx.arc(sz/2+x*sz,sz/2+y*sz,12,0,Math.PI*2);
+        ctx.fillStyle=turn===1?"#000":"#fff";
+        ctx.fill();
+        let win=false;
+        const dirs=[[1,0],[0,1],[1,1],[1,-1]];
+        for(let [dx,dy] of dirs){
+            let cnt=1;
+            for(let d=1;d<5;d++){
+                let nx=x+dx*d, ny=y+dy*d;
+                if(nx>=0&&nx<n&&ny>=0&&ny<n&&board[ny][nx]===turn) cnt++; else break;
+            }
+            for(let d=1;d<5;d++){
+                let nx=x-dx*d, ny=y-dy*d;
+                if(nx>=0&&nx<n&&ny>=0&&ny<n&&board[ny][nx]===turn) cnt++; else break;
+            }
+            if(cnt>=5) win=true;
+        }
+        if(win){
+            alert(turn===1?"黑棋胜利！":"白棋胜利！");
+            board=Array.from({length:n},()=>Array(n).fill(0));
+            gobangGame();
+            return;
+        }
+        turn=3-turn;
+    }
+}
+
+// 扫雷
+function mineGame(){
+    canvas.width=320;canvas.height=320;
+    const s=40, n=8, totalMine=10;
+    let grid=Array.from({length:n},()=>Array(n).fill(0));
+    let reveal=Array.from({length:n},()=>Array(n).fill(false));
+    let mine=Array.from({length:n},()=>Array(n).fill(false));
+    let placed=0;
+    while(placed<totalMine){
+        let rx=Math.floor(Math.random()*n);
+        let ry=Math.floor(Math.random()*n);
+        if(!mine[ry][rx]){ mine[ry][rx]=true; placed++; }
+    }
+    for(let y=0;y<n;y++){
+        for(let x=0;x<n;x++){
+            if(mine[y][x]) continue;
+            let c=0;
+            for(let dy=-1;dy<=1;dy++)
+                for(let dx=-1;dx<=1;dx++){
+                    let nx=x+dx, ny=y+dy;
+                    if(nx>=0&&nx<n&&ny>=0&&ny<n&&mine[ny][nx]) c++;
+                }
+            grid[y][x]=c;
+        }
+    }
+    function draw(){
+        ctx.fillStyle="#666"; ctx.fillRect(0,0,320,320);
+        for(let y=0;y<n;y++){
+            for(let x=0;x<n;x++){
+                if(!reveal[y][x]){
+                    ctx.fillStyle="#888";
+                    ctx.fillRect(x*s,y*s,s-1,s-1);
+                }else{
+                    if(mine[y][x]){
+                        ctx.fillStyle="#f22";
+                        ctx.fillRect(x*s,y*s,s-1,s-1);
+                    }else{
+                        ctx.fillStyle="#ccc";
+                        ctx.fillRect(x*s,y*s,s-1,s-1);
+                        if(grid[y][x]>0){
+                            ctx.fillStyle="#000";
+                            ctx.font="20px sans-serif";
+                            ctx.fillText(grid[y][x],x*s+12,y*s+26);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    function open(x,y){
+        if(x<0||x>=n||y<0||y>=n||reveal[y][x]) return;
+        reveal[y][x]=true;
+        if(mine[y][x]){
+            draw();
+            alert("踩到地雷！游戏结束");
+            mineGame();
+            return;
+        }
+        if(grid[y][x]===0){
+            for(let dy=-1;dy<=1;dy++)
+                for(let dx=-1;dx<=1;dx++) open(x+dx,y+dy);
+        }
+        draw();
+    }
+    draw();
+    canvas.onclick=e=>{
+        const r=canvas.getBoundingClientRect();
+        let mx=e.clientX-r.left, my=e.clientY-r.top;
+        let x=Math.floor(mx/s), y=Math.floor(my/s);
+        open(x,y);
+    }
+}
+
+// 消消乐
+function matchGame(){
+    canvas.width=360;canvas.height=360;
+    const s=60, n=6, colorList=["#f44336","#2196f3","#4caf50","#ffc107","#9c27b0"];
+    let board=Array.from({length:n},()=>Array(n).fill(0));
+    for(let y=0;y<n;y++)
+        for(let x=0;x<n;x++)
+            board[y][x]=Math.floor(Math.random()*colorList.length);
+    let sel=null;
+    function draw(){
+        ctx.fillStyle="#222"; ctx.fillRect(0,0,360,360);
+        for(let y=0;y<n;y++){
+            for(let x=0;x<n;x++){
+                ctx.fillStyle=colorList[board[y][x]];
+                ctx.fillRect(x*s+2,y*s+2,s-4,s-4);
+                if(sel && sel.x===x && sel.y===y){
+                    ctx.strokeStyle="#fff"; ctx.lineWidth=3;
+                    ctx.strokeRect(x*s+2,y*s+2,s-4,s-4);
+                }
+            }
+        }
+    }
+    function check(){
+        let del=new Set();
+        for(let y=0;y<n;y++){
+            for(let x=0;x<n-2;x++){
+                let c=board[y][x];
+                if(c!==-1 && board[y][x+1]===c && board[y][x+2]===c){
+                    del.add(`${x},${y}`);del.add(`${x+1},${y}`);del.add(`${x+2},${y}`);
+                }
+            }
+        }
+        for(let x=0;x<n;x++){
+            for(let y=0;y<n-2;y++){
+                let c=board[y][x];
+                if(c!==-1 && board[y+1][x]===c && board[y+2][x]===c){
+                    del.add(`${x},${y}`);del.add(`${x},${y+1}`);del.add(`${x},${y+2}`);
+                }
+            }
+        }
+        if(del.size===0) return false;
+        del.forEach(k=>{
+            let [xx,yy]=k.split(',').map(Number);
+            board[yy][xx]=-1;
+        });
+        for(let x=0;x<n;x++){
+            let arr=[];
+            for(let y=n-1;y>=0;y--) if(board[y][x]!==-1) arr.push(board[y][x]);
+            for(let y=0;y<n;y++) board[y][x]=-1;
+            for(let i=0;i<arr.length;i++) board[n-1-i][x]=arr[i];
+        }
+        for(let x=0;x<n;x++)
+            for(let y=0;y<n;y++)
+                if(board[y][x]===-1) board[y][x]=Math.floor(Math.random()*colorList.length);
+        return true;
+    }
+    draw();
+    canvas.onclick=e=>{
+        const r=canvas.getBoundingClientRect();
+        let mx=e.clientX-r.left, my=e.clientY-r.top;
+        let x=Math.floor(mx/s), y=Math.floor(my/s);
+        if(!sel){ sel={x,y}; draw(); return; }
+        let dx=Math.abs(sel.x-x), dy=Math.abs(sel.y-y);
+        if((dx===1&&dy===0)||(dx===0&&dy===1)){
+            [board[y][x], board[sel.y][sel.x]]=[board[sel.y][sel.x], board[y][x]];
+            if(!check()){
+                [board[y][x], board[sel.y][sel.x]]=[board[sel.y][sel.x], board[y][x]];
+            }else{
+                while(check()){}
+            }
+        }
+        sel=null;
+        draw();
+    }
+}
+
+function runGame(name){
+    canvas.onclick=null;
+    document.onkeydown=null;
+    clearInterval(timer);
+    switch(name){
+        case "snake": snakeGame(); break;
+        case "tetris": tetrisGame(); break;
+        case "gobang": gobangGame(); break;
+        case "mine": mineGame(); break;
+        case "match": matchGame(); break;
     }
 }
 </script>
