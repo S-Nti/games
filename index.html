@@ -14,16 +14,15 @@
         body {
             background-color: #1a1a1a;
             color: #fff;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            min-height: 100vh;
+            padding: 40px 20px;
         }
         .login-card {
             background-color: #2d2d2d;
             padding: 32px;
             border-radius: 12px;
             width: 340px;
+            margin: 80px auto 0;
         }
         .login-card h2 {
             text-align: center;
@@ -58,34 +57,47 @@
             margin-top: 12px;
             display: none;
         }
-        .game-container {
+        .home-page {
             display: none;
-            width: 100%;
-            height: 100vh;
-            padding: 30px;
         }
         .title {
             font-size: 28px;
-            margin-bottom: 24px;
+            margin-bottom: 40px;
             text-align: center;
         }
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             gap: 20px;
-            max-width: 900px;
+            max-width: 800px;
             margin: 0 auto;
         }
-        .game-item {
+        .game-btn {
             background: #333;
             padding: 20px;
             border-radius: 10px;
             text-align: center;
             cursor: pointer;
             transition: 0.2s;
+            border: 0;
+            color: white;
+            font-size: 16px;
         }
-        .game-item:hover {
+        .game-btn:hover {
             background: #444;
+        }
+        .game-view {
+            display: none;
+            text-align: center;
+        }
+        .back-btn{
+            margin-bottom:20px;
+            padding:8px 16px;
+            cursor:pointer;
+        }
+        canvas{
+            background:#000;
+            border:2px solid #666;
         }
     </style>
 </head>
@@ -102,15 +114,21 @@
         <div id="errMsg">账号或密码错误</div>
     </div>
 
-    <div class="game-container" id="gameBox">
+    <div class="home-page" id="homeBox">
         <div class="title">🎮 怀旧小游戏合集</div>
         <div class="grid">
-            <div class="game-item">贪吃蛇</div>
-            <div class="game-item">俄罗斯方块</div>
-            <div class="game-item">消消乐</div>
-            <div class="game-item">五子棋</div>
-            <div class="game-item">扫雷</div>
+            <button class="game-btn" data-game="snake">贪吃蛇</button>
+            <button class="game-btn" data-game="tetris">俄罗斯方块</button>
+            <button class="game-btn" data-game="match">消消乐</button>
+            <button class="game-btn" data-game="gobang">五子棋</button>
+            <button class="game-btn" data-game="mine">扫雷</button>
         </div>
+    </div>
+
+    <div class="game-view" id="gameView">
+        <button class="back-btn" id="backHome">返回主页</button>
+        <br>
+        <canvas id="gameCanvas"></canvas>
     </div>
 
 <script>
@@ -119,9 +137,12 @@ const pwdInput = document.getElementById('pwd');
 const loginBtn = document.getElementById('loginBtn');
 const errMsg = document.getElementById('errMsg');
 const loginBox = document.getElementById('loginBox');
-const gameBox = document.getElementById('gameBox');
+const homeBox = document.getElementById('homeBox');
+const gameView = document.getElementById('gameView');
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const backHome = document.getElementById('backHome');
 
-// 账号密码
 const validUser = "杨发勇";
 const validPwd = "蠢蛋";
 
@@ -130,10 +151,62 @@ loginBtn.onclick = function(){
     const p = pwdInput.value.trim();
     if(u === validUser && p === validPwd){
         loginBox.style.display = 'none';
-        gameBox.style.display = 'block';
+        homeBox.style.display = 'block';
         errMsg.style.display = 'none';
     }else{
         errMsg.style.display = 'block';
+    }
+}
+backHome.onclick = ()=>{
+    gameView.style.display = 'none';
+    homeBox.style.display = 'block';
+}
+document.querySelectorAll('.game-btn').forEach(btn=>{
+    btn.onclick = ()=>{
+        homeBox.style.display = 'none';
+        gameView.style.display = 'block';
+        runGame(btn.dataset.game);
+    }
+})
+
+// 贪吃蛇
+function runGame(name){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(name === "snake"){
+        canvas.width=400;canvas.height=400;
+        let sz=20, snake=[{x:5,y:5}], dx=1, dy=0, food={x:10,y:10};
+        function draw(){
+            ctx.fillStyle="#000";ctx.fillRect(0,0,400,400);
+            ctx.fillStyle="#0f0";
+            snake.forEach(s=>ctx.fillRect(s.x*sz,s.y*sz,sz-2,sz-2));
+            ctx.fillStyle="#f00";
+            ctx.fillRect(food.x*sz,food.y*sz,sz-2,sz-2);
+        }
+        function step(){
+            let h=snake[0];
+            let nh={x:h.x+dx,y:h.y+dy};
+            if(nh.x<0||nh.y<0||nh.x*sz>=400||nh.y*sz>=400) return alert("游戏结束");
+            for(let s of snake) if(s.x===nh.x&&s.y===nh.y) return alert("游戏结束");
+            snake.unshift(nh);
+            if(nh.x===food.x&&nh.y===food.y){
+                food={x:Math.floor(Math.random()*20),y:Math.floor(Math.random()*20)};
+            }else snake.pop();
+            draw();
+        }
+        draw();
+        setInterval(step,150);
+        document.onkeydown=e=>{
+            if(e.key==="ArrowUp"&&dy!==1){dx=0;dy=-1}
+            if(e.key==="ArrowDown"&&dy!==-1){dx=0;dy=1}
+            if(e.key==="ArrowLeft"&&dx!==1){dx=-1;dy=0}
+            if(e.key==="ArrowRight"&&dx!==-1){dx=1;dy=0}
+        }
+    }else{
+        canvas.width=400;canvas.height=400;
+        ctx.fillStyle="#fff";
+        ctx.font="20px sans-serif";
+        ctx.textAlign="center";
+        ctx.fillText(`${name} 游戏待开发`,200,200);
     }
 }
 </script>
