@@ -1,191 +1,141 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>怀旧小游戏合集</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
-body{background:#111;color:#fff}
-#login{position:fixed;inset:0;background:#222;display:flex;align-items:center;justify-content:center;z-index:99}
-.login-box{padding:32px;border-radius:12px;background:#333;width:320px}
-.login-box h2{margin-bottom:20px;text-align:center}
-.login-box input{width:100%;padding:10px;margin:8px 0;border:none;border-radius:6px;font-size:16px}
-.login-box button{width:100%;padding:11px;margin-top:12px;border:none;border-radius:6px;background:#2563eb;color:#fff;font-size:17px;cursor:pointer}
-#main{display:none;padding:16px;max-width:1100px;margin:0 auto}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-.game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
-.game-card{padding:20px;background:#222;border-radius:10px;text-align:center;cursor:pointer;transition:0.2s}
-.game-card:hover{background:#333}
-.game-view{display:none;margin-top:16px;background:#222;border-radius:10px;padding:16px;min-height:520px}
-.back-btn{padding:8px 14px;background:#444;border:none;color:#fff;border-radius:6px;cursor:pointer;margin-bottom:12px}
-canvas{background:#000;border:2px solid #444}
-.tip{color:#aaa;font-size:14px;margin:8px 0}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>怀旧小游戏合集</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, sans-serif;
+        }
+        body {
+            background-color: #1a1a1a;
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            background-color: #2d2d2d;
+            padding: 32px;
+            border-radius: 12px;
+            width: 340px;
+        }
+        .login-card h2 {
+            text-align: center;
+            margin-bottom: 24px;
+            font-size: 22px;
+        }
+        .item {
+            margin-bottom: 16px;
+        }
+        .item input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 6px;
+            border: none;
+            font-size: 16px;
+            outline: none;
+        }
+        #loginBtn {
+            width: 100%;
+            padding: 12px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 17px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        #errMsg {
+            color: #ff5555;
+            text-align: center;
+            margin-top: 12px;
+            display: none;
+        }
+        .game-container {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            padding: 30px;
+        }
+        .title {
+            font-size: 28px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .game-item {
+            background: #333;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .game-item:hover {
+            background: #444;
+        }
+    </style>
 </head>
 <body>
-<div id="login">
-<div class="login-box">
-<h2>登录进入游戏</h2>
-<input id="user" placeholder="账号">
-<input id="pwd" type="password" placeholder="密码">
-<button onclick="checkLogin()">登录</button>
-<div id="err" style="color:#f87171;margin-top:10px;text-align:center;display:none">账号或密码错误</div>
-</div>
-</div>
-<div id="main">
-<div class="header">
-<h1>怀旧小游戏合集</h1>
-<button onclick="logout()" class="back-btn">退出登录</button>
-</div>
-<div class="game-grid">
-<div class="game-card" onclick="openGame('snake')">🐍 贪吃蛇</div>
-<div class="game-card" onclick="openGame('tetris')">🧱 俄罗斯方块</div>
-<div class="game-card" onclick="openGame('2048')">🔢 2048</div>
-<div class="game-card" onclick="openGame('minesweeper')">💣 扫雷</div>
-<div class="game-card" onclick="openGame('brick')">🏓 打砖块</div>
-<div class="game-card" onclick="openGame('flip')">🃏 翻牌记忆</div>
-<div class="game-card" onclick="openGame('tictac')">⭕ 井字棋</div>
-</div>
-<div class="game-view" id="gameView">
-<button class="back-btn" onclick="closeGame()">返回游戏列表</button>
-<div id="gameContainer"></div>
-</div>
-</div>
+    <div class="login-card" id="loginBox">
+        <h2>登录进入游戏</h2>
+        <div class="item">
+            <input type="text" id="user" placeholder="账号">
+        </div>
+        <div class="item">
+            <input type="text" id="pwd" placeholder="密码">
+        </div>
+        <button id="loginBtn">登录</button>
+        <div id="errMsg">账号或密码错误</div>
+    </div>
+
+    <div class="game-container" id="gameBox">
+        <div class="title">🎮 怀旧小游戏合集</div>
+        <div class="grid">
+            <div class="game-item">贪吃蛇</div>
+            <div class="game-item">俄罗斯方块</div>
+            <div class="game-item">消消乐</div>
+            <div class="game-item">五子棋</div>
+            <div class="game-item">扫雷</div>
+        </div>
+    </div>
 
 <script>
-const ACCOUNT = "杨发勇";
-const PASSWD = "蠢蛋";
-if(localStorage.getItem("gameLogin")==="ok"){
-  document.getElementById("login").style.display="none";
-  document.getElementById("main").style.display="block";
-}
-function checkLogin(){
-  const u = document.getElementById("user").value.trim();
-  const p = document.getElementById("pwd").value.trim();
-  if(u===ACCOUNT && p===PASSWD){
-    localStorage.setItem("gameLogin","ok");
-    document.getElementById("login").style.display="none";
-    document.getElementById("main").style.display="block";
-  }else{
-    document.getElementById("err").style.display="block";
-  }
-}
-function logout(){
-  localStorage.removeItem("gameLogin");
-  location.reload();
-}
-let currentGame = null;
-function openGame(name){
-  currentGame = name;
-  document.querySelector(".game-grid").style.display="none";
-  document.getElementById("gameView").style.display="block";
-  const c = document.getElementById("gameContainer");
-  c.innerHTML="";
-  switch(name){
-    case "snake": snakeGame(c); break;
-    case "tetris": tetrisGame(c); break;
-    case "2048": game2048(c); break;
-    case "minesweeper": mineGame(c); break;
-    case "brick": brickGame(c); break;
-    case "flip": flipGame(c); break;
-    case "tictac": ticGame(c); break;
-  }
-}
-function closeGame(){
-  document.querySelector(".game-grid").style.display="grid";
-  document.getElementById("gameView").style.display="none";
-  currentGame=null;
-}
+const userInput = document.getElementById('user');
+const pwdInput = document.getElementById('pwd');
+const loginBtn = document.getElementById('loginBtn');
+const errMsg = document.getElementById('errMsg');
+const loginBox = document.getElementById('loginBox');
+const gameBox = document.getElementById('gameBox');
 
-// 贪吃蛇
-function snakeGame(box){
-  box.innerHTML = `<div class="tip">方向键控制，吃到食物变长，撞墙/撞自己结束</div><canvas id="snakeC" width="400" height="400"></canvas>`;
-  const cvs = document.getElementById("snakeC");
-  const ctx = cvs.getContext("2d");
-  const s = 20;
-  let snake = [{x:10,y:10}];
-  let dx=1,dy=0;
-  let food={x:15,y:15};
-  function draw(){
-    ctx.fillStyle="#000";ctx.fillRect(0,0,400,400);
-    ctx.fillStyle="#22c55e";
-    snake.forEach(p=>ctx.fillRect(p.x*s,p.y*s,s-2,s-2));
-    ctx.fillStyle="#ef4444";
-    ctx.fillRect(food.x*s,food.y*s,s-2,s-2);
-    const h = {x:snake[0].x+dx,y:snake[0].y+dy};
-    if(h.x<0||h.x>=20||h.y<0||h.y>=20||snake.some(i=>i.x===h.x&&i.y===h.y)){
-      clearInterval(t);alert("游戏结束");return;
+// 账号密码
+const validUser = "杨发勇";
+const validPwd = "蠢蛋";
+
+loginBtn.onclick = function(){
+    const u = userInput.value.trim();
+    const p = pwdInput.value.trim();
+    if(u === validUser && p === validPwd){
+        loginBox.style.display = 'none';
+        gameBox.style.display = 'block';
+        errMsg.style.display = 'none';
+    }else{
+        errMsg.style.display = 'block';
     }
-    snake.unshift(h);
-    if(h.x===food.x&&h.y===food.y){
-      food={x:Math.floor(Math.random()*20),y:Math.floor(Math.random()*20)};
-    }else snake.pop();
-  }
-  const t=setInterval(draw,120);
-  document.onkeydown=e=>{
-    if(e.key==="ArrowUp"&&dy!==1){dx=0;dy=-1}
-    if(e.key==="ArrowDown"&&dy!==-1){dx=0;dy=1}
-    if(e.key==="ArrowLeft"&&dx!==1){dx=-1;dy=0}
-    if(e.key==="ArrowRight"&&dx!==-1){dx=1;dy=0}
-  }
 }
-
-// 井字棋
-function ticGame(box){
-  box.innerHTML = `<div class="tip">双人对战，O先手</div><div style="display:grid;grid-template-columns:repeat(3,80px);gap:6px;margin-top:10px" id="ticBoard"></div>`;
-  const b = document.getElementById("ticBoard");
-  let arr = Array(9).fill(null);
-  let turn = "O";
-  function render(){
-    b.innerHTML="";
-    arr.forEach((v,i)=>{
-      const d = document.createElement("div");
-      d.style="width:80px;height:80px;background:#444;display:grid;place-items:center;font-size:32px;cursor:pointer";
-      d.innerText=v||"";
-      if(!v) d.onclick=()=>{arr[i]=turn;turn=turn==="O"?"X":"O";render()};
-      b.appendChild(d);
-    })
-    const win = checkWin(arr);
-    if(win) setTimeout(()=>alert(win+" 获胜！"),100);
-  }
-  function checkWin(a){
-    const w=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-    for(let [x,y,z] of w) if(a[x]&&a[x]===a[y]&&a[y]===a[z]) return a[x];
-    return null;
-  }
-  render();
-}
-
-// 2048
-function game2048(box){
-box.innerHTML=`<div class="tip">方向键滑动合并数字，触屏可滑动</div><div id="g2048" style="display:grid;grid-template-columns:repeat(4,70px);gap:6px;background:#333;padding:6px;width:fit-content"></div>`;
-const g = document.getElementById("g2048");
-let mat = Array(4).fill().map(()=>Array(4).fill(0));
-function addRand(){
-  let e=[];
-  for(let i=0;i<4;i++)for(let j=0;j<4;j++)if(!mat[i][j])e.push([i,j]);
-  if(e.length){const [x,y]=e[Math.floor(Math.random()*e.length)];mat[x][y]=Math.random()>0.9?4:2;}
-}
-function draw(){
-  g.innerHTML="";
-  for(let i=0;i<4;i++)for(let j=0;j<4;j++){
-    const d=document.createElement("div");
-    d.style="width:70px;height:70px;background:#444;display:grid;place-items:center;font-size:22px;font-weight:bold";
-    d.innerText=mat[i][j]||"";
-    g.appendChild(d);
-  }
-}
-addRand();addRand();draw();
-document.onkeydown=e=>{
-  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)){
-    // 简化版本基础移动逻辑，完整合并逻辑已内置
-    addRand();draw();
-  }
-}
-}
-
-// 剩余：俄罗斯方块 / 扫雷 / 打砖块 / 翻牌记忆 （因为单文件太长，如果你想要全部7个都完整可玩，我可以单独补齐剩下4个游戏的完整逻辑）
 </script>
 </body>
 </html>
